@@ -1,0 +1,140 @@
+Отправка электронного сообщения из Java-приложения это распространенное требование. Не имеет значения работаешь ли ты над core Java-приложением, веб-приложением или enterprise Java-приложением, тебе может понадобится отправить письмо для оповещения персонала из тех.поддержки об ошибках, или просто отправить письмо пользователям при регистрации, восстановить пароль или попросить их подтвердить адрес электронной почты после регистрации. Есть очень много сценариев(случаев), когда тебе нужна возможность отправить электронные письма из Java-приложения.
+
+Как отправить письмо из Java-приложения (с примером) - 1В готовых приложениях у тебя уже есть модуль или библиотека, работающая со всеми функциями для отправки электронных писем, например, возможность отправлять вложения, изображения, включая подписи и форматированный текст в электронных письмах, НО если тебе нужно написать что-то с нуля, тогда Java Mail API это прекрасный вариант. В этой статье мы научимся как отправлять электронные письма из Java-приложения, используя почтовый API (javax.mail). Перед написанием кода ты должен знать некоторые основы работы электронной почты, например, тебе нужен SMTP (простой протокол передачи почты) сервер. Если ты запускаешь свое Java-приложение под Linux, тогда ты должен знать, что SMTP демон (прим. "компьютерная программа в системах класса UNIX, запускаемая самой системой и работающая в фоновом режиме без прямого взаимодействия с пользователем") использует порт 25.
+
+Ты можешь использовать любой почтовый сервер для отправки сообщений применяя Java, включая общедоступные почтовые сервера, такие как GMail, Yahoo или любой другой поставщик услуг, все что тебе нужно это детали их SMTP сервера, например, имя хоста, порт, параметры соединения и т.д. Так же ты можешь использовать SSL (англ. secure sockets layer — уровень защищённых сокетов), TLS (англ. Transport Layer Security — безопасность транспортного уровня) для безопасного соединения и отправки писем, но этот пример мы сделали простым и cфокусировались на минимальной логике для отправки письма из Java-приложения. В дальнейших статьях мы научимся как отправлять письмо используя вложения, как отправлять форматированное с помощью HTML письмо, как прикрепить изображения в письмо, как использовать SSL аутентификацию для соединения с сервером GMail и отправки писем и т.д. А сейчас, давай поймем (разберем) этот простой пример Java Mail API.
+Пример Java-кода для отправки электронного сообщения
+
+Для отправки письма из Java-программы тебе потребуются Java Mail API и Java Activation Framework(JAF); если более точно, то тебе понадобятся mail-1.4.5.jar, smtp-1.4.4.jar, и activation-1.1.jar. Тебе нужно скачать эти JAR файлы и включить их в твой Classpath для запуска этой программы. В качестве альтернативы ты можешь использовать Maven для управления зависимостями и включить все зависимости там. Как только у тебя будут все эти JAR файлы, просто следуй шагам ниже для создания и отправки электронного письма c помощью Java.
+Создай объект Session вызывая Session.getDefaultInstance(properties), где properties — содержит все важные свойства, например, имя хоста SMTP сервера.
+
+Создай объект MimeMessage передавая ему объект Session, полученный на предыдущем шаге. У нас есть набор различных свойств в этом объекте, таких как получатель письма, тема, тело сообщения, вложения и т.д.
+
+Используй javax.mail.Transport для отправки письма вызывая статический метод send(email), где email может быть объект MimeMessage.
+
+Количество свойств, которые ты передаешь для создания объекта Session отличается в зависимости от типа SMTP сервера, например, если ты используешь SMTP сервер, который не требует никакой аутентификации, ты можешь создать объект Session только с одним свойством, например, smtp.mail.host, и тебе не нужно указывать порт, потому что он имеет порт 25 по умолчанию. С другой стороны, если ты подключаешься к SMTP серверу, который требует TLS или SSL аутентификацию, например, GMail's SMTP Host, тогда тебе нужно предоставить немного больше свойств, например, mail.smtp.port=547 для TLS и mail.smtp.port=457 для SSL.
+
+Это законченная Java-программа, которая соединяется с стандартным SMTP сервером без аутентификации и отправляет текстовое письмо используя Java Mail API.
+
+import java.util.Properties;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+
+/**
+* Java Program to send text mail using default SMTP server and without authentication.
+* You need mail.jar, smtp.jar and activation.jar to run this program.
+*
+* @author Javin Paul
+*/
+
+public class EmailSender{
+     public static void main(String args[]){
+
+           String to = "receive@abc.om";         // sender email
+           String from = "sender@abc.com";       // receiver email
+           String host = "127.0.0.1";            // mail server host
+
+           Properties properties = System.getProperties();
+           properties.setProperty("mail.smtp.host", host);
+
+           Session session = Session.getDefaultInstance(properties); // default session
+
+           try {
+                MimeMessage message = new MimeMessage(session); // email message
+
+                message.setFrom(new InternetAddress(from)); // setting header fields
+
+                message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
+
+                message.setSubject("Test Mail from Java Program"); // subject line
+
+                // actual mail body
+                message.setText("You can send mail from Java program by using mail API, but you need" +
+                                "couple of more JAR files e.g. smtp.jar and activation.jar");
+
+                // Send message
+                Transport.send(message); System.out.println("Email Sent successfully....");
+               } catch (MessagingException mex){ mex.printStackTrace(); }
+
+     }
+
+}
+
+На выходе :
+
+Ты можешь скомпилировать и запустить эту программу для отправки простого электронного письма из Java-программы:
+
+$ javac EmailSender.java
+$ java EmailSender
+
+Sent email successfully....
+
+Как ты можешь видеть, очень просто отправлять письма из Java-программы. Как только ты создал объект MimeMessage, тебе нужно добавить получателей, которые могут указываться в полях TO, CC, BCC. Завершив с получателями нам нужно указать тему письма, и, наконец, само содержание письма вызвав метод message.setText(); Если ты хочешь сделать множественную рассылку, тогда следующие метод может быть использован для указания получателей:
+
+void addRecipients(Message.RecipientType type, Address[] addresses) throws MessagingException
+
+Ты можешь добавить людей в поле TO используя Message.RecipientType.TO, в поле CC используя Message.RecipientType.CC, и в BCC — Message.RecipientType.BCC.
+Ошибки и исключения
+
+Когда многие Java-программисты впервые начинают писать программу для отправки электронного письма, они натыкаются на ошибку, потому что большинство из них думает, что mail.jar и activation.jar будет достаточно для отправки письма из Java-приложения, что не так, особенно если ты отправляешь имейл через локальный SMTP сервер в Linux. Если ты запускаешь эту программу только с mail.jar и activation.jar в твоем CLASSPATH, ты вероятнее всего получишь эту ошибку.
+Exception 1:
+
+com.sun.mail.util.MailConnectException: Couldn't connect to host, port: localhost, 25; timeout -1;
+        nested exception is:
+            java.net.ConnectException: Connection refused: connect
+            at com.sun.mail.smtp.SMTPTransport.openServer(SMTPTransport.java:1984)
+            at com.sun.mail.smtp.SMTPTransport.protocolConnect(SMTPTransport.java:656)
+            at javax.mail.Service.connect(Service.java:345)
+            at javax.mail.Service.connect(Service.java:226)
+            at javax.mail.Service.connect(Service.java:175)
+            at javax.mail.Transport.send0(Transport.java:253)
+            at javax.mail.Transport.send(Transport.java:124)
+            at Testing.main(Testing.java:62)
+        Caused by: java.net.ConnectException: Connection refused: connect
+            at java.net.DualStackPlainSocketImpl.connect0(Native Method)
+            at java.net.DualStackPlainSocketImpl.socketConnect(DualStackPlainSocketImpl.java:79)
+            at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:339)
+            at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:200)
+            at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:182)
+            at java.net.PlainSocketImpl.connect(PlainSocketImpl.java:172)
+            at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392)
+            at java.net.Socket.connect(Socket.java:579) at java.net.Socket.connect(Socket.java:528)
+            at com.sun.mail.util.SocketFetcher.createSocket(SocketFetcher.java:301)
+            at com.sun.mail.util.SocketFetcher.getSocket(SocketFetcher.java:229)
+            at com.sun.mail.smtp.SMTPTransport.openServer(SMTPTransport.java:1950)
+       ... 7 more
+
+Хотя решение этой ошибки очень простое, она может вас запутать. java.net.ConnectException: Connection refused: connect обычно вылетает, когда не работает сервер или неверно указанный порт, по которому ты соединяешься. Решение: кроме mail-1.4.5.jar, тебе так же нужны smtp-1.4.4.jar и activation-1.1.jar.
+Exception 2:
+
+Это другая ошибка, называющаяся NoClassDefFoundError, которая обычно относится к отсутствующему JAR файлу в Classpath
+
+Exception in thread "main" java.lang.NoClassDefFoundError: javax/mail/MessagingException
+           at java.lang.Class.getDeclaredMethods0(Native Method)
+           at java.lang.Class.privateGetDeclaredMethods(Class.java:2521)
+           at java.lang.Class.getMethod0(Class.java:2764)
+           at java.lang.Class.getMethod(Class.java:1653)
+           at sun.launcher.LauncherHelper.getMainMethod(LauncherHelper.java:494)
+           at sun.launcher.LauncherHelper.checkAndLoadMain(LauncherHelper.java:486)
+Caused by: java.lang.ClassNotFoundException: javax.mail.MessagingException
+           at java.net.URLClassLoader$1.run(URLClassLoader.java:366)
+           at java.net.URLClassLoader$1.run(URLClassLoader.java:355)
+           at java.security.AccessController.doPrivileged(Native Method)
+           at java.net.URLClassLoader.findClass(URLClassLoader.java:354)
+           at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
+           at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:308)
+           at java.lang.ClassLoader.loadClass(ClassLoader.java:357)
+
+Решение: Мне удалось решить мою проблему, она произошла из-за некорректного Classpath. Несмотря на то, что у меня были все три требуемых JAR, файл Java класса для программы в одной директории и я запускал программу оттуда, Java не смогла этого понять. Я попытался ввести следующие команды и программа прекрасно заработала:
+
+java -cp mail-1.4.5.jar:smtp-1.4.4.jar:activation-1.1.jar:. JavaMailSender
+
+Sent email successfully....
+
+Пожалуйста обратите внимание, что текущая директория отмечена точкой в конце аргумента Classpath. Так как я запускал программу в Linux, я использовал двоеточие(:) вместо точки с запятой (;) (как в Windows).
+
+Вот и все о том, как отправить имейл из Java-приложения используя почтовое API. Тебе может показаться это очень простым, так как не нужно ничего более, кроме трех JAR файлов. Намного проще, если ты используешь Gradle или Maven для управления зависимостями. В следующих туториалах мы увидим более сложные примеры Java Mail API для отправки писем с вложениями, с картинками и красиво отформатированных писем для отправки отчетов и таблиц.
